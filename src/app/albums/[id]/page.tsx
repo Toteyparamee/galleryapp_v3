@@ -29,12 +29,17 @@ export default function AlbumPage({ params }: { params: Promise<{ id: string }> 
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
-      <div className="border-b border-gray-100 px-6 py-4 flex items-center gap-4">
-        <Link href="/" className="text-gray-400 hover:text-gray-600 text-sm">← Back</Link>
-        <div>
-          <h1 className="text-lg font-semibold text-gray-800">{album?.name}</h1>
-          <p className="text-xs text-gray-400">{photos.length} photos</p>
+      <div className="border-b border-gray-100 px-6 py-4 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Link href="/" className="text-gray-400 hover:text-gray-600 text-sm">← Back</Link>
+          <div>
+            <h1 className="text-lg font-semibold text-gray-800">{album?.name}</h1>
+            <p className="text-xs text-gray-400">{photos.length} photos</p>
+          </div>
         </div>
+        <Link href="/?tab=face" className="px-4 py-2 rounded-full border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors">
+          🔍 Face Search
+        </Link>
       </div>
 
       {/* Grid */}

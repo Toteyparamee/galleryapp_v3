@@ -1,12 +1,12 @@
 'use client'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, Suspense } from 'react'
 import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'https://photo.parameedev.online/api/v1'
 const FACE_URL = process.env.NEXT_PUBLIC_FACE_URL || 'https://photo.parameedev.online/face'
 
-export default function Home() {
+function HomeContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [tab, setTab] = useState<'gallery' | 'face'>(searchParams.get('tab') === 'face' ? 'face' : 'gallery')
@@ -327,5 +327,13 @@ export default function Home() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={null}>
+      <HomeContent />
+    </Suspense>
   )
 }

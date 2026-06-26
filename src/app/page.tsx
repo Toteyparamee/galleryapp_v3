@@ -40,9 +40,17 @@ function HomeContent() {
 
   // Camera
   const startCamera = async () => {
-    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } })
-    setCameraStream(stream)
-    if (videoRef.current) videoRef.current.srcObject = stream
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false })
+      setCameraStream(stream)
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream
+        videoRef.current.setAttribute('playsinline', 'true')
+        await videoRef.current.play()
+      }
+    } catch {
+      alert('ไม่สามารถเปิดกล้องได้ กรุณาอนุญาตการเข้าถึงกล้องในการตั้งค่าเบราว์เซอร์')
+    }
   }
   const stopCamera = () => {
     cameraStream?.getTracks().forEach(t => t.stop())

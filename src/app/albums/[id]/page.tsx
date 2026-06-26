@@ -115,7 +115,7 @@ export default function AlbumPage({ params }: { params: Promise<{ id: string }> 
                     <input type="checkbox" checked={selectedPhotos.has(photo.id)} onChange={() => toggleSelect(photo.id)} />
                   </div>
                 )}
-                <img src={photo.thumbnail_path || photo.jpeg_path} alt={photo.original_name} className="photo-thumbnail" />
+                <img src={photo.thumbnail_url || photo.jpeg_url} alt={photo.original_name} className="photo-thumbnail" />
                 {!isSelectionMode && (
                   <div className="photo-overlay">
                     <button className="download-btn" onClick={e => { e.stopPropagation(); downloadPhoto(photo.id, photo.original_name) }}>⬇️</button>
@@ -160,7 +160,7 @@ export default function AlbumPage({ params }: { params: Promise<{ id: string }> 
         <div className="modal" onClick={() => setSelectedPhoto(null)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
             <span className="close" onClick={() => setSelectedPhoto(null)}>&times;</span>
-            <img src={selectedPhoto.jpeg_path || selectedPhoto.thumbnail_path} alt={selectedPhoto.original_name} className="modal-image" />
+            <img src={selectedPhoto.jpeg_url || selectedPhoto.thumbnail_url} alt={selectedPhoto.original_name} className="modal-image" />
             <div className="modal-footer">
               <h3>{selectedPhoto.original_name}</h3>
               <button className="download-btn-large" onClick={() => downloadPhoto(selectedPhoto.id, selectedPhoto.original_name)}>📥 Download Photo</button>
@@ -183,7 +183,7 @@ export default function AlbumPage({ params }: { params: Promise<{ id: string }> 
               <div className="selected-photos-preview">
                 {Array.from(selectedPhotos).slice(0, 6).map(pid => {
                   const p = photos.find((x: any) => x.id === pid)
-                  return p ? <img key={pid} src={p.thumbnail_path || p.jpeg_path} alt="" className="preview-thumbnail" /> : null
+                  return p ? <img key={pid} src={p.thumbnail_url || p.jpeg_url} alt="" className="preview-thumbnail" /> : null
                 })}
                 {selectedPhotos.size > 6 && <div className="more-photos">+{selectedPhotos.size - 6}</div>}
               </div>

@@ -1,11 +1,13 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'https://photo.parameedev.online/api/v1'
 const FACE_URL = process.env.NEXT_PUBLIC_FACE_URL || 'https://photo.parameedev.online/face'
 
 export default function Home() {
+  const router = useRouter()
   const [tab, setTab] = useState<'gallery' | 'face'>('gallery')
   const [albums, setAlbums] = useState<any[]>([])
   const [selectedAlbum, setSelectedAlbum] = useState<any>(null)
@@ -31,13 +33,8 @@ export default function Home() {
       .finally(() => setLoadingAlbums(false))
   }, [])
 
-  const openAlbum = async (album: any) => {
-    setSelectedAlbum(album)
-    setLoadingPhotos(true)
-    const res = await fetch(`${API}/gallery?album_id=${album.id}`)
-    const d = await res.json()
-    setPhotos(d.data ?? [])
-    setLoadingPhotos(false)
+  const openAlbum = (album: any) => {
+    router.push(`/albums/${album.id}`)
   }
 
   // Camera

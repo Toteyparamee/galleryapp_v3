@@ -73,9 +73,11 @@ function HomeContent() {
       fd.append('file', faceImage)
       const res = await fetch(`${FACE_URL}/search-faces`, { method: 'POST', body: fd })
       const d = await res.json()
+      if (!res.ok) throw new Error(JSON.stringify(d))
       setFaceResults(d.results ?? d.matches ?? [])
-    } catch {
-      setFaceError('ค้นหาไม่สำเร็จ กรุณาลองใหม่')
+    } catch (e) {
+      setFaceError(`ค้นหาไม่สำเร็จ: ${e}`)
+      console.error(e)
     } finally {
       setFaceLoading(false)
     }

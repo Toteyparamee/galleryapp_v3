@@ -70,7 +70,7 @@ function HomeContent() {
     setFaceResults([])
     try {
       const fd = new FormData()
-      fd.append('image', faceImage)
+      fd.append('file', faceImage)
       const res = await fetch(`${FACE_URL}/search-faces`, { method: 'POST', body: fd })
       const d = await res.json()
       setFaceResults(d.results ?? d.matches ?? [])

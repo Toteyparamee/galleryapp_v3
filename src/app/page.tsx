@@ -1,7 +1,25 @@
 'use client'
 import { useState, useEffect, useRef, Suspense } from 'react'
-import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
+
+async function downloadPhoto(url: string, filename: string) {
+  const res = await fetch(url)
+  const blob = await res.blob()
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(blob)
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(a.href)
+}
+
+async function downloadMultiple(photos: any[]) {
+  for (const photo of photos) {
+    const url = photo.jpeg_url || photo.thumbnail_url
+    if (!url) continue
+    await downloadPhoto(url, photo.original_name || `photo_${photo.id}.jpg`)
+    await new Promise(r => setTimeout(r, 200))
+  }
+}
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'https://photo.parameedev.online/api/v1'
 const FACE_URL = process.env.NEXT_PUBLIC_FACE_URL || 'https://photo.parameedev.online/face'
@@ -170,7 +188,15 @@ function HomeContent() {
                 >
                   ← กลับ
                 </button>
-                <h1 className="text-2xl font-bold text-gray-900">{selectedAlbum.name}</h1>
+                <h1 className="text-2xl font-bold text-gray-900 flex-1">{selectedAlbum.name}</h1>
+                {photos.length > 0 && (
+                  <button
+                    onClick={() => downloadMultiple(photos)}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-indigo-50 text-indigo-600 text-sm font-medium hover:bg-indigo-100 transition-colors"
+                  >
+                    ⬇ โหลดทั้งหมด ({photos.length})
+                  </button>
+                )}
               </div>
               {loadingPhotos ? (
                 <div className="flex justify-center py-20">
@@ -181,17 +207,24 @@ function HomeContent() {
               ) : (
                 <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
                   {photos.map(photo => (
-                    <button
-                      key={photo.id}
-                      onClick={() => setSelectedPhoto(photo)}
-                      className="aspect-square rounded-xl overflow-hidden bg-gray-100 hover:opacity-90 transition-opacity"
-                    >
-                      <img
-                        src={photo.thumbnail_url || photo.jpeg_url}
-                        alt={photo.original_name}
-                        className="w-full h-full object-cover"
-                      />
-                    </button>
+                    <div key={photo.id} className="relative group aspect-square rounded-xl overflow-hidden bg-gray-100">
+                      <button
+                        onClick={() => setSelectedPhoto(photo)}
+                        className="w-full h-full"
+                      >
+                        <img
+                          src={photo.thumbnail_url || photo.jpeg_url}
+                          alt={photo.original_name}
+                          className="w-full h-full object-cover group-hover:opacity-90 transition-opacity"
+                        />
+                      </button>
+                      <button
+                        onClick={e => { e.stopPropagation(); downloadPhoto(photo.jpeg_url || photo.thumbnail_url, photo.original_name || `photo_${photo.id}.jpg`) }}
+                        className="absolute bottom-1.5 right-1.5 bg-black/60 text-white rounded-lg px-2 py-1 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        ⬇
+                      </button>
+                    </div>
                   ))}
                 </div>
               )}
@@ -321,12 +354,20 @@ function HomeContent() {
           onClick={() => setSelectedPhoto(null)}
         >
           <div className="relative max-w-4xl w-full" onClick={e => e.stopPropagation()}>
-            <button
-              onClick={() => setSelectedPhoto(null)}
-              className="absolute -top-10 right-0 text-white/70 hover:text-white text-2xl"
-            >
-              ✕
-            </button>
+            <div className="absolute -top-10 right-0 flex items-center gap-2">
+              <button
+                onClick={() => downloadPhoto(selectedPhoto.jpeg_url || selectedPhoto.thumbnail_url, selectedPhoto.original_name || `photo_${selectedPhoto.id}.jpg`)}
+                className="text-white/70 hover:text-white text-sm px-3 py-1 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"
+              >
+                ⬇ โหลดรูป
+              </button>
+              <button
+                onClick={() => setSelectedPhoto(null)}
+                className="text-white/70 hover:text-white text-2xl"
+              >
+                ✕
+              </button>
+            </div>
             <img
               src={selectedPhoto.jpeg_url || selectedPhoto.thumbnail_url}
               alt={selectedPhoto.original_name}

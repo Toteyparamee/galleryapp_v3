@@ -5,10 +5,28 @@ import { useRouter, useSearchParams } from 'next/navigation'
 async function downloadPhoto(url: string, filename: string) {
   const res = await fetch(url)
   const blob = await res.blob()
+
+  // Mobile Safari/Chrome ignore <a download> on JS-built blob URLs — the tap
+  // silently does nothing. The native share sheet (same one Lightroom's
+  // "Save Image" uses) is the reliable path there, so prefer it whenever the
+  // OS supports sharing this file.
+  const file = new File([blob], filename, { type: blob.type || 'image/jpeg' })
+  if (navigator.canShare?.({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file] })
+      return
+    } catch (err) {
+      if ((err as DOMException)?.name === 'AbortError') return // user cancelled the share sheet
+      // fall through to the <a download> path below
+    }
+  }
+
   const a = document.createElement('a')
   a.href = URL.createObjectURL(blob)
   a.download = filename
+  document.body.appendChild(a)
   a.click()
+  a.remove()
   URL.revokeObjectURL(a.href)
 }
 

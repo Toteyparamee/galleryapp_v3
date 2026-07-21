@@ -73,10 +73,10 @@ export default function FaceSearch() {
     setSearching(true); setResults([])
     try {
       const form = new FormData()
-      form.append('image', blob, 'face.jpg')
+      form.append('file', blob, 'face.jpg')
       const res = await fetch(`${FACE_URL}/search-faces`, { method: 'POST', body: form })
       const data = await res.json()
-      setResults(data.data ?? data.results ?? [])
+      setResults(data.matches ?? data.results ?? [])
     } catch {
       alert('Face search failed')
     } finally {

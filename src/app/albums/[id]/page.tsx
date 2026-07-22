@@ -45,6 +45,7 @@ async function downloadMultiple(photos: any[]) {
 
 const LONG_PRESS_MS = 450
 const ONBOARDING_KEY = 'gallery_album_onboarding_dismissed'
+const PAGE_SIZE = 100
 
 interface TourStep {
   targetRef: React.RefObject<HTMLElement | null>
@@ -142,6 +143,9 @@ export default function AlbumPage({ params }: { params: Promise<{ id: string }> 
   const [album, setAlbum] = useState<any>(null)
   const [photos, setPhotos] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [total, setTotal] = useState(0)
+  const pageRef = useRef(0) // last page number successfully fetched
   const [selectedPhoto, setSelectedPhoto] = useState<any>(null)
   const [showOnboarding, setShowOnboarding] = useState(false)
 
@@ -154,6 +158,7 @@ export default function AlbumPage({ params }: { params: Promise<{ id: string }> 
   const firstPhotoRef = useRef<HTMLDivElement>(null)
   const downloadAllRef = useRef<HTMLButtonElement>(null)
   const faceSearchRef = useRef<HTMLAnchorElement>(null)
+  const sentinelRef = useRef<HTMLDivElement>(null)
 
   const startLongPress = (photo: any) => {
     longPressFired.current = false
@@ -201,12 +206,58 @@ export default function AlbumPage({ params }: { params: Promise<{ id: string }> 
     }
   }
 
+  // Fetch the next page of photos and append it. `total` from the API tells us
+  // how many exist overall, so the infinite-scroll observer knows when to stop.
+  const loadNextPage = async () => {
+    if (loadingMore) return
+    const nextPage = pageRef.current + 1
+    setLoadingMore(true)
+    try {
+      const res = await fetch(`${BASE_URL}/gallery?album_id=${id}&page=${nextPage}&limit=${PAGE_SIZE}`)
+      const d = await res.json()
+      const batch: any[] = d.data ?? []
+      pageRef.current = nextPage
+      if (typeof d.total === 'number') setTotal(d.total)
+      // De-dupe by id in case a page boundary shifts between requests.
+      setPhotos(prev => {
+        const seen = new Set(prev.map(p => p.id))
+        return [...prev, ...batch.filter(p => !seen.has(p.id))]
+      })
+    } finally {
+      setLoadingMore(false)
+    }
+  }
+
   useEffect(() => {
+    // Reset when the album changes, then load album meta + first page.
+    setPhotos([])
+    setTotal(0)
+    pageRef.current = 0
+    setLoading(true)
     Promise.all([
       fetch(`${BASE_URL}/albums/${id}`).then(r => r.json()).then(d => setAlbum(d.data ?? d)),
-      fetch(`${BASE_URL}/gallery?album_id=${id}&limit=100`).then(r => r.json()).then(d => setPhotos(d.data ?? [])),
+      loadNextPage(),
     ]).finally(() => setLoading(false))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
+
+  // Infinite scroll: load more when the sentinel scrolls into view and there's
+  // still more to fetch.
+  const hasMore = photos.length < total
+  useEffect(() => {
+    if (loading || !hasMore) return
+    const el = sentinelRef.current
+    if (!el) return
+    const observer = new IntersectionObserver(
+      entries => {
+        if (entries[0].isIntersecting && !loadingMore) loadNextPage()
+      },
+      { rootMargin: '600px' } // start fetching before the user hits the bottom
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, hasMore, loadingMore, photos.length])
 
   useEffect(() => {
     if (!loading && photos.length > 0 && !localStorage.getItem(ONBOARDING_KEY)) {
@@ -281,7 +332,7 @@ export default function AlbumPage({ params }: { params: Promise<{ id: string }> 
               </Link>
               <div className="min-w-0">
                 <h1 className="text-base font-semibold text-gray-900 truncate">{album?.name}</h1>
-                <p className="text-xs text-gray-400">{photos.length} photos · กดค้างที่รูปเพื่อเลือก</p>
+                <p className="text-xs text-gray-400">{total || photos.length} photos · กดค้างที่รูปเพื่อเลือก</p>
               </div>
             </div>
             <div className="flex items-center gap-2 shrink-0">
@@ -383,6 +434,15 @@ export default function AlbumPage({ params }: { params: Promise<{ id: string }> 
               </div>
             )
           })}
+        </div>
+      )}
+
+      {/* Infinite-scroll sentinel + loader */}
+      {photos.length > 0 && hasMore && (
+        <div ref={sentinelRef} className="flex items-center justify-center py-8">
+          {loadingMore && (
+            <div className="w-6 h-6 border-[3px] border-indigo-500 border-t-transparent rounded-full animate-spin" />
+          )}
         </div>
       )}
 
